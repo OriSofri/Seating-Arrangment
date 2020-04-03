@@ -1,4 +1,4 @@
-
+package SA; 
 public class Guest {
 
 	private String first_name;
@@ -18,33 +18,33 @@ public class Guest {
 		this.how_many = how_many; 
 
 	}
-	
-	//getters 
-	private String whichSide() {
+
+	//getters starts; 
+	public String whichSide() {
 		return this.side; 
 	}
 	
-	private String getFirstName() {
+	public String getFirstName() {
 		return this.first_name;
 	}
 	
-	private String getLastName() {
+	public String getLastName() {
 		return this.last_name; 
 	}
 	
-	private String getFullName() {
+	public String getFullName() {
 		String full_name;
 		full_name = this.first_name + " " + this.last_name; 
 		return full_name; 
 	}
 	
-	private String getGroup() {
+	public String getGroup() {
 		return this.group;
 	}
 	
-	private int howMany() {
+	public int howMany() {
 		return this.how_many; 
 	}
-	//end with getters; 
+	//getters ends; 
 
 }
