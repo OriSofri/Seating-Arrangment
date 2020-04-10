@@ -18,6 +18,14 @@ public class Guest {
 		this.how_many = how_many; 
 
 	}
+	public Guest() {
+		this.first_name = "";
+		this.last_name = ""; 
+		this.side = "";  
+		this.group = ""; 
+		this.how_many = 0; 
+
+	}
 
 	//getters starts; 
 	public String whichSide() {

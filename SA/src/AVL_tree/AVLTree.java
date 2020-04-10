@@ -3,18 +3,24 @@ package AVL_tree;
 import SA.Guest;
 
 public class AVLTree {
-	private Node root = null;
-	int allGuests =0; 
+	private Node root = null; 
 	
 	public AVLTree(Guest root) {
-		this.root = new Node(root); 
-		this.allGuests = root.howMany(); 
+		this.root = new Node(root);  
 		
+	}
+	
+	public AVLTree () {
+		this.root = null; 
 	}
 	
 	//getters starts
 	public Node getRoot() {
 		return this.root; 
+	}
+	
+	public void setRoot(Node root) {
+		this.root = root; 
 	}
 	//getters ends
 	
@@ -26,11 +32,9 @@ public class AVLTree {
 		if(rootIsNull()) {
 			
 			this.root = new Node(guestToInsert);
-			this.allGuests = guestToInsert.howMany(); 
 		}
 		else {
 			this.root.insert(guestToInsert); 
-			this.allGuests = this.allGuests + guestToInsert.howMany(); 
 		}
 		
 	}
@@ -51,25 +55,40 @@ public class AVLTree {
 		return this.root.findClosestGuest(value, lastName); 
 	}
 	
-	//remove node from the tree if node exist in the tree. 
-	public boolean removeNode (Guest guestToRemove) {
-		if(rootIsNull()) {
-			return false; 
+	//remove a guest from the tree, if a node needs to be removed following this guest removal remove the node as well. 
+	public void removeGuest (Guest guestToRemove) {
+		removeGuestHelper(this.root, guestToRemove); 	
+	}
+	
+	private void removeGuestHelper(Node node, Guest guestToRemove) {
+		int searchedValue = guestToRemove.howMany(); 
+		if(node == null) {
+			return;
 		}
-		boolean removed = this.root.removeGuest(guestToRemove);
-		//if guest has been removed we need to decrease the number of people this guest represents; 
-		if(removed) {
-			this.allGuests = this.allGuests - guestToRemove.howMany(); 
-			return removed; 
+		if(node.GetNodeInvitedGuest() == searchedValue) {
+			//remove the guest.
+			node.getGuests().remove(guestToRemove);
+			//we need to remove node if it has no guests. 
+			if(node.getGuests().isEmpty()) {
+				if(node == root) {
+					root.removeRoot(); 
+				}
+				root.removeNode(node); 
+			}
 		}
-		return removed; 
+		else if(node.GetNodeInvitedGuest() > searchedValue) {
+			removeGuestHelper(node.getLeft(), guestToRemove);
+		}
+		else {
+			removeGuestHelper(node.getRight(), guestToRemove);
+		}
 	}
 	
 	public int GetAllGuests() {
 		if(this.rootIsNull()) {
 			return 0;
-		}
-		return this.allGuests; 
+		} 
+		return root.GetAllGuests();
 	}
 
 } 				

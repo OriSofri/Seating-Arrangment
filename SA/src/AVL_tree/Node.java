@@ -2,20 +2,30 @@ package AVL_tree;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import javax.management.RuntimeErrorException;
+
 import SA.Guest;
 
 class Node {
     private LinkedList<Guest> guests = new LinkedList<Guest>();
     private Node left;
     private Node right;
-    private int hight; 
+    private Node parent; 
+    private int Height = -1; 
     
  
     public Node(Guest guest) {
         this.guests.add(guest);
         right = null;
         left = null;
-        hight = 0; 
+        Height = 0; 
+        parent = null; 
+    }
+    
+    public Node() {
+    	this.right = null; 
+    	this.left = null; 
+    	this.parent = null;
     }
         
     //***********Getters starts************* 
@@ -23,20 +33,59 @@ class Node {
     	return this.guests.getFirst(); 
     }
     
+	public Node getLeft() {
+		return this.left;
+	}
+	
+	public Node getRight() {
+		return this.right;
+	}
+    
     public LinkedList<Guest> getGuests() {
     	return this.guests; 
     }
     
-    public int getHight() {
-    	return this.hight; 
+    public int getHeight() {
+    	return this.Height; 
+    }
+    
+    public int getLeftHeight() {
+    	if(this.left == null) {
+    		return -1; 
+    	}
+    	else {
+    		return this.left.getHeight(); 
+    	}
+    }
+    
+    public int getRightHeight() {
+    	if(this.right == null) {
+    		return -1; 
+    	}
+    	else {
+    		return this.right.getHeight(); 
+    	}
+    }
+    
+    public int GetAllGuests() {
+    	int output = GetNodeInvitedGuest() * (this.guests.size());
+    	if(this.left != null) {
+    		output = output + this.left.GetAllGuests(); 
+    	}
+    	if(this.right != null) {
+    		output = output + this.right.GetAllGuests(); 
+    	}
+    	return output; 
+    }
+    
+    public int GetNodeInvitedGuest() {
+    	return this.getGuest().howMany(); 
     }
     //************Getters ends****************
     
     //************private methods*************
     //returns number of guests each Guest in this node LinkedList represents 
-    private int GetNodeInvitedGuest() {
-    	return this.getGuest().howMany(); 
-    }
+   
     
     //returns the guest with lastName if exist and null if don't. 
     private Guest findByLastName(String lastName) {
@@ -61,16 +110,21 @@ class Node {
 		return this.getGuest();
     }
     
-    //added a boolean to know if the tree has a new leaf and balance check is needed. 
+    //************************************
+    private void updateHeight() {
+		 this.Height = Math.max(getLeftHeight(), getRightHeight()) + 1; 
+    }
+    //*************************************
+    
+
     private boolean helpInsert(Guest guestToInsert) {
     	int currentGuestNumber = this.GetNodeInvitedGuest(); 
 		int numOfGuestsToInsert = guestToInsert.howMany();
 		//need those to know if we got higher on not. 
-		int leftOriginHight = this.left.getHight();
-		int rightOriginSize = this.right.getHight();
-		boolean checkHight = false; 
+
+		boolean checkHeight = false; 
 		//if we already have a node that represent this guest number we just added to the list of that node. 
-		if(this.GetNodeInvitedGuest() == numOfGuestsToInsert) {
+		if(currentGuestNumber == numOfGuestsToInsert) {
 			this.guests.add(guestToInsert); 
 			return false; 
 		}
@@ -81,9 +135,10 @@ class Node {
 				//need to create a new node. and to inform all nodes in the path they are higher now or not.  
 				Node newNode = new Node(guestToInsert); 
 				this.left = newNode; 
+				newNode.parent = this; 
 				//if this is this node first child than he made himself higher, and there for all of his ancestors  
 				if(this.right == null) {
-					this.hight++; 
+					this.Height++; 
 					return true;
 				}
 				else {
@@ -93,27 +148,241 @@ class Node {
 			}
 			//walking on the left subtree. 
 			else {
-				checkHight  = this.left.helpInsert(guestToInsert);
-				if(checkHight ) {
-					//if the left was equal or higher originally from the right subtree so the new node make me higher. 
-					if(leftOriginHight >= rightOriginSize ) {
-						this.hight++;
+				checkHeight  = this.left.helpInsert(guestToInsert);
+				if(checkHeight ) {
 						//checking if balance is needed
-						int leftCurrentHight = this.left.getHight(); 
-						int rightCurrentSize = this.right.getHight();
+						int leftCurrentHeight = this.getLeftHeight(); 
+						int rightCurrentSize = this.getRightHeight();
 						//balance is needed.  
-						if(leftCurrentHight- rightCurrentSize >=2) {
+						if(leftCurrentHeight- rightCurrentSize >=2) {
+							Node leftChild = this.left; 
 							//now go through rotation cases- 
-							//1. check if left child has left child that is higher than left child right child than right rotation
-							//2. check if left child has right child that is higher than left child left child that double rotation. 
+							//case 1: check if left child has left child that is higher than left child right child than right rotation
+							//case 3: check if left child has right child that is higher than left child left child than double rotation. 
+							int leftLeftHeight = leftChild.getLeftHeight(); 
+							int leftRightHeight = leftChild.getRightHeight(); 
+							//can't be means we did a mistake in previous insertion/deletion. 
+							if(leftLeftHeight == leftRightHeight) {
+								throw new RuntimeErrorException(null, "AVL tree is unbalanced"); 
+							}
+							//case 1 perform right rotation
+							else if(leftLeftHeight > leftRightHeight) {
+								rotation(1, true); 
+								//fixed the balance no checking is needed
+								return false; 
+							}
+							//case 3: perform left than right 
+							else {
+								rotation(3, true); 
+								//fixed the balance no checking is needed
+								return false; 
+							}
 						}
-						
+						//check if we got higher and if do updates our height.
+						updateHeight(); 
+						//returns true maybe another node in the path need balance 
+						return checkHeight; 
+						 
 					}
+					
+				//returns false- we didn't enter the if(checkHeight) condition so we we don't need to check others in the path from now on. 
+					return checkHeight; 
 				}
+			}	
+		
+		//****** end of left subtree case needs to go right.****** 
+		else { 
+			//add a new right child
+			if(this.right == null) {
+				//need to create a new node. and to inform all nodes in the path to check if they need balance now or not.  
+				Node newNode = new Node(guestToInsert); 
+				this.right = newNode; 
+				newNode.parent =this; 
+				//if this is this node first child than he made himself higher, and there for all of his ancestors  
+				if(this.left == null) {
+					this.Height++; 
+					return true;
+				}
+				else {
+					//we didn't increase the height of any subtree so no balance is needed. 
+					return false; 
+				}
+				    
 			}
-			
+			//walking on the right subtree. 
+			else {
+				checkHeight  = this.right.helpInsert(guestToInsert);
+				if(checkHeight ) {
+						//checking if balance is needed
+						int leftCurrentHeight = this.getLeftHeight(); 
+						int rightCurrentSize = this.getRightHeight();
+						//balance is needed.  
+						if(rightCurrentSize- leftCurrentHeight >=2) {
+							Node rightChild = this.right; 
+							//now go through rotation cases- 
+							//case 2: check if right child has right child that is higher than right child left child than left rotation
+							//case 4: check if right child has left child that is higher than right child right child than double rotation. 
+							int rightRightHeight = rightChild.getRightHeight(); 
+							int rightLeftHeight = rightChild.getLeftHeight(); 
+							//can't be means we did a mistake in previous insertion/deletion. 
+							if(rightRightHeight == rightLeftHeight) {
+								throw new RuntimeErrorException(null, "AVL tree is unbalanced"); 
+							}
+							//case 1 perform left rotation
+							else if(rightRightHeight >= rightLeftHeight) {
+								rotation(2, true); 
+								//fixed the balance no checking is needed
+								return false; 
+							}
+							//case 3: perform left than right 
+							else {
+								rotation(4, true); 
+								//fixed the balance no checking is needed
+								return false; 
+							}
+						}
+						updateHeight(); 
+						//returns true maybe another node in the path need balance 
+						return checkHeight; 
+						 
+					}
+				//returns false- we didn't enter the if(checkHeight) condition so we we don't need to check others in the path from now on. 
+					return checkHeight; 
+				}
 		}
     }
+    //helpInsert ends
+    
+    
+    //rotation: perform the wanted rotation- 1.right rotation 2. left rotation 3.left than right 4. right than left. 
+    private void rotation(int rotation, boolean insertion) {
+    	Node parent = this.parent; 
+    	Node temp; 
+    	switch(rotation) {
+    	//right rotation
+    	case 1: 
+    		temp = this.left.right; 
+    		Node leftChild = this.left; 
+    		//checking if I'm a left or right child
+    		if(parent.left == this) {
+    			//update my parent to point on my left child instead of me
+    			parent.left = leftChild;  
+    		}
+    		else {
+    			//update my parent to point on my left child instead of me
+    			parent.right = leftChild;  
+    		}
+			leftChild.parent = parent;
+			//i become my left child right child. his originally right child is saved in temp.  
+    		leftChild.right = this; 
+    		//my parent become my left child. 
+    		this.parent = leftChild;
+    		//my left child become my left child right child. 
+    		this.left = temp; 
+    		temp.parent =this; 
+    		updateHeight(); 
+    		this.parent.updateHeight();
+    		
+    	//left rotation	
+    	case 2:	
+    		temp = this.right.left;  
+    		Node rightChild = this.right; 
+    		//checking if I'm a left or right child
+    		if(parent.left == this) {
+    			//update my parent to point on my right child instead of me
+    			parent.left = rightChild;  
+    		}
+    		else {
+    			//update my parent to point on my right child instead of me
+    			parent.right = rightChild;  
+    		}
+			rightChild.parent = parent;
+			//i become my right child left child. his originally left child is saved in temp.  
+    		rightChild.left = this; 
+    		//my parent become my right child. 
+    		this.parent = rightChild;
+    		//my right child become my right child left child. 
+    		this.right = temp; 
+    		temp.parent =this; 
+    		if(insertion) {
+    			updateHeight();  
+    			this.parent.updateHeight();
+    		}
+    	case 3:
+    	case 4:
+    		doubleRotation(rotation); 
+    	 
+    	default: 
+    		System.out.println("Wrong rotation case was inserted");
+    	}
+    }
+    //************************\\
+    private void doubleRotation(int rotation) {
+    	if(rotation == 3) {
+    		this.left.rotation(2, true);
+    		rotation(1, true);
+    	}
+    	else {
+    		this.right.rotation(1,true);
+    		rotation(2, true); 
+    	}
+		updateHeight(); 
+		this.parent.updateHeight();
+    	
+    }
+    
+    
+    //3 possible events: 1. erasing a leaf
+    //					 2. erasing a node with one child
+    //					 3. erasing a node with two children. 
+    private void EraseNode(int event) {
+    	Node parent = this.parent; 
+    	switch(event){
+    		case 1: //leaf
+    			updateParent(null); 
+    		case 2: //one child
+    			if(this.left != null) {
+    				updateParent(this.left); 
+    			}
+    			else {
+    				updateParent(this.right);
+    			}
+    		case 3: 
+    			Node succesor = getSuccesor(this.right);
+    			if(succesor.right == null) {// succesor is a leaf. 
+    				succesor.EraseNode(1);
+    			}
+    			else {
+    				succesor.EraseNode(2);
+    			}
+    			
+    	}
+    	
+    }
+    
+    private Node getSuccesor(Node node) {
+    	 if(node.left == null) {
+    		 return node; 
+    	 }
+    	 else {
+    		 return getSuccesor(node.left); 
+    	 }
+    	
+    }
+    
+    private void updateParent(Node node) {
+    	Node parent = this.parent;
+    	if(parent.left == this) {
+			parent.left = node;
+
+		}
+    	else {
+    		parent.right = node; 
+    	}
+		this.parent = null; 
+		parent.updateHeight();
+    }	 
+    
     //***********private methods ends**************
     
     // insert a new node and balance the tree if needed.
@@ -223,9 +492,50 @@ class Node {
 	}
 	
 	//remove node from the tree if node exist in the tree. 
-	public boolean removeGuest (Guest guestToRemove) {
-		// TODO Auto-generated constructor stub  
+	public boolean removeNode(Node nodeToRemove) {
+		if(this == nodeToRemove) {
+			if(this.left == null) {
+				if(this.right == null) { 
+					 // deleting a leaf. 
+					this.updateParent(null); //updating the parent to point ot null.
+					return true; 
+				}
+				//one right child. 
+				updateParent(this.right); 
+				return true; 
+			}
+			//left is not null
+			else {
+				if(this.right == null) {
+					//one left child
+					updateParent(this.left); 
+				}
+				else {
+					//two children 
+					Node succesor = this.getSuccesor(this.right);
+					removeNode(succesor); 
+					succesor.left = this.left; 
+					succesor.right = this.right; 
+					updateParent(succesor); 
+				}
+				return true; 
+				
+			}
+		}
+		//we need to search left subtree
+		else if(this.GetNodeInvitedGuest() > nodeToRemove.GetNodeInvitedGuest()) {
+			if(this.left == null) {
+				return false; 
+			}
+			boolean checkHeight = removeNode(this.left); 
+			if(checkHeight) {
+				
+			}
+		}
 	}
-    
-    
+	
+	public void removeRoot() {
+		
+	}
+ 
 }
