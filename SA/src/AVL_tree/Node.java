@@ -152,9 +152,9 @@ class Node {
 				if(checkHeight ) {
 						//checking if balance is needed
 						int leftCurrentHeight = this.getLeftHeight(); 
-						int rightCurrentSize = this.getRightHeight();
+						int rightCurrentHeight = this.getRightHeight();
 						//balance is needed.  
-						if(leftCurrentHeight- rightCurrentSize >=2) {
+						if(Math.abs(leftCurrentHeight- rightCurrentHeight) >=2) {
 							Node leftChild = this.left; 
 							//now go through rotation cases- 
 							//case 1: check if left child has left child that is higher than left child right child than right rotation
@@ -167,13 +167,13 @@ class Node {
 							}
 							//case 1 perform right rotation
 							else if(leftLeftHeight > leftRightHeight) {
-								rotation(1, true); 
+								rotation(1); 
 								//fixed the balance no checking is needed
 								return false; 
 							}
 							//case 3: perform left than right 
 							else {
-								rotation(3, true); 
+								rotation(3); 
 								//fixed the balance no checking is needed
 								return false; 
 							}
@@ -215,9 +215,9 @@ class Node {
 				if(checkHeight ) {
 						//checking if balance is needed
 						int leftCurrentHeight = this.getLeftHeight(); 
-						int rightCurrentSize = this.getRightHeight();
+						int rightCurrentHeight = this.getRightHeight();
 						//balance is needed.  
-						if(rightCurrentSize- leftCurrentHeight >=2) {
+						if(Math.abs(rightCurrentHeight- leftCurrentHeight) >=2) {
 							Node rightChild = this.right; 
 							//now go through rotation cases- 
 							//case 2: check if right child has right child that is higher than right child left child than left rotation
@@ -230,13 +230,13 @@ class Node {
 							}
 							//case 1 perform left rotation
 							else if(rightRightHeight >= rightLeftHeight) {
-								rotation(2, true); 
+								rotation(2); 
 								//fixed the balance no checking is needed
 								return false; 
 							}
 							//case 3: perform left than right 
 							else {
-								rotation(4, true); 
+								rotation(4); 
 								//fixed the balance no checking is needed
 								return false; 
 							}
@@ -255,7 +255,7 @@ class Node {
     
     
     //rotation: perform the wanted rotation- 1.right rotation 2. left rotation 3.left than right 4. right than left. 
-    private void rotation(int rotation, boolean insertion) {
+    private void rotation(int rotation) {
     	Node parent = this.parent; 
     	Node temp; 
     	switch(rotation) {
@@ -304,10 +304,8 @@ class Node {
     		//my right child become my right child left child. 
     		this.right = temp; 
     		temp.parent =this; 
-    		if(insertion) {
-    			updateHeight();  
-    			this.parent.updateHeight();
-    		}
+    		updateHeight();  
+    		this.parent.updateHeight();
     	case 3:
     	case 4:
     		doubleRotation(rotation); 
@@ -319,12 +317,12 @@ class Node {
     //************************\\
     private void doubleRotation(int rotation) {
     	if(rotation == 3) {
-    		this.left.rotation(2, true);
-    		rotation(1, true);
+    		this.left.rotation(2);
+    		rotation(1);
     	}
     	else {
-    		this.right.rotation(1,true);
-    		rotation(2, true); 
+    		this.right.rotation(1);
+    		rotation(2); 
     	}
 		updateHeight(); 
 		this.parent.updateHeight();
@@ -332,40 +330,14 @@ class Node {
     }
     
     
-    //3 possible events: 1. erasing a leaf
-    //					 2. erasing a node with one child
-    //					 3. erasing a node with two children. 
-    private void EraseNode(int event) {
-    	Node parent = this.parent; 
-    	switch(event){
-    		case 1: //leaf
-    			updateParent(null); 
-    		case 2: //one child
-    			if(this.left != null) {
-    				updateParent(this.left); 
-    			}
-    			else {
-    				updateParent(this.right);
-    			}
-    		case 3: 
-    			Node succesor = getSuccesor(this.right);
-    			if(succesor.right == null) {// succesor is a leaf. 
-    				succesor.EraseNode(1);
-    			}
-    			else {
-    				succesor.EraseNode(2);
-    			}
-    			
-    	}
-    	
-    }
+
     
-    private Node getSuccesor(Node node) {
+    private Node getsuccessor(Node node) {
     	 if(node.left == null) {
     		 return node; 
     	 }
     	 else {
-    		 return getSuccesor(node.left); 
+    		 return getsuccessor(node.left); 
     	 }
     	
     }
@@ -379,7 +351,8 @@ class Node {
     	else {
     		parent.right = node; 
     	}
-		this.parent = null; 
+		this.parent = null;
+		node.parent =parent; 
 		parent.updateHeight();
     }	 
     
@@ -497,12 +470,12 @@ class Node {
 			if(this.left == null) {
 				if(this.right == null) { 
 					 // deleting a leaf. 
-					this.updateParent(null); //updating the parent to point ot null.
-					return true; 
+					this.updateParent(null); //updating the parent to point to null.
 				}
-				//one right child. 
-				updateParent(this.right); 
-				return true; 
+				else {
+					//one right child. 
+					updateParent(this.right); 
+				} 
 			}
 			//left is not null
 			else {
@@ -511,27 +484,78 @@ class Node {
 					updateParent(this.left); 
 				}
 				else {
-					//two children 
-					Node succesor = this.getSuccesor(this.right);
-					removeNode(succesor); 
-					succesor.left = this.left; 
-					succesor.right = this.right; 
-					updateParent(succesor); 
+					//two children - switching this with it successor. 
+					Node successor = this.getsuccessor(this.right);
+					removeNode(successor); 
+					successor.left = this.left; 
+					successor.right = this.right; 
+					successor.updateHeight();
+					updateParent(successor); 
 				}
-				return true; 
 				
 			}
+			return true; 
 		}
-		//we need to search left subtree
-		else if(this.GetNodeInvitedGuest() > nodeToRemove.GetNodeInvitedGuest()) {
+		//we need to search right subtree
+		else if(this.GetNodeInvitedGuest() < nodeToRemove.GetNodeInvitedGuest()) {
+			if(this.right == null) {
+				return false; 
+			}
+			boolean checkHeight = this.right.removeNode(nodeToRemove); 
+			if(checkHeight) {
+				int leftCurrentHeight = this.getLeftHeight(); 
+				int rightCurrentHeight = this.getRightHeight();
+				//balance is needed means we deleted a node in the right subtree. 
+				if(Math.abs(leftCurrentHeight- rightCurrentHeight) >=2) {
+					Node leftChild = this.left; 
+					//now go through rotation cases- 
+					//case 1: check if left child has left child that is higher or equal to left child right child than right rotation
+					//case 3: check if left child has right child that is higher than left child left child than double rotation. 
+					int leftLeftHeight = leftChild.getLeftHeight(); 
+					int leftRightHeight = leftChild.getRightHeight();
+					if(leftLeftHeight >= leftRightHeight) {
+						//in this case we need to do a right rotation on this and his left child.
+						rotation(1);
+					}
+					else {
+						rotation(3); 
+					} 
+				}
+				return true; 
+			}
+			return false; 
+			
+		}
+		//we need to go through left subtree
+		else {
 			if(this.left == null) {
 				return false; 
 			}
-			boolean checkHeight = removeNode(this.left); 
+			boolean checkHeight = this.left.removeNode(nodeToRemove);
 			if(checkHeight) {
-				
+				int leftCurrentHeight = this.getLeftHeight(); 
+				int rightCurrentHeight = this.getRightHeight();
+				//balance is needed means we deleted a node in the left subtree. 
+				if(Math.abs(leftCurrentHeight- rightCurrentHeight) >=2) {
+					Node rightChild = this.right; 
+					//now go through rotation cases- 
+					//case 1: check if left child has left child that is higher or equal to left child right child than right rotation
+					//case 3: check if left child has right child that is higher than left child left child than double rotation. 
+					int rightLeftHeight = rightChild.getLeftHeight(); 
+					int rightRightHeight = rightChild.getRightHeight();
+					if(rightRightHeight >= rightLeftHeight) {
+						//in this case we need to do a left rotation on this and his right child.
+						rotation(2);
+					}
+					else {
+						rotation(4); 
+					} 
+				}
+				return true; 
 			}
+			return false; 
 		}
+		
 	}
 	
 	public void removeRoot() {

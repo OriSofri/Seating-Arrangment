@@ -14,7 +14,7 @@ public class Main {
 		}
 	//	while(myScanner.nextLine().equalsIgnoreCase(yes));
 		System.out.println("Great Success"); 
-
+		myScanner.close();
 	}
 
 }
