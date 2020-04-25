@@ -331,7 +331,6 @@ class Node {
     
     
 
-    
     private Node getsuccessor(Node node) {
     	 if(node.left == null) {
     		 return node; 
@@ -344,16 +343,21 @@ class Node {
     
     private void updateParent(Node node) {
     	Node parent = this.parent;
-    	if(parent.left == this) {
-			parent.left = node;
+    	if(parent != null) {
+    		if(parent.left == this) {
+    			parent.left = node;
 
-		}
-    	else {
-    		parent.right = node; 
+    		}
+        	else {
+        		parent.right = node; 
+        	}
+    		
+    		parent.updateHeight();
     	}
-		this.parent = null;
-		node.parent =parent; 
-		parent.updateHeight();
+    	this.parent = null;
+    	if(node != null) {
+    		node.parent =parent;
+    	}
     }	 
     
     //***********private methods ends**************
@@ -558,8 +562,37 @@ class Node {
 		
 	}
 	
-	public void removeRoot() {
-		
+	public void removeRoot(AVLTree tree) {
+		if(this.left == null) {
+			if(this.right == null) { 
+				 // deleting a leaf. 
+				tree.setRoot(null);
+			}
+			else {
+				//one right child. 
+				this.right.parent = null; 
+				tree.setRoot(this.right); 
+			} 
+		}
+		//left is not null
+		else {
+			if(this.right == null) {
+				//one left child
+				this.left.parent = null; 
+				tree.setRoot(left);
+			}
+			else {
+				//two children - switching this with it successor. 
+				Node successor = this.getsuccessor(this.right);
+				removeNode(successor); 
+				successor.left = this.left; 
+				successor.right = this.right; 
+				successor.updateHeight();
+				successor.parent = null; 
+				tree.setRoot(successor);
+			}
+			
+		}
 	}
  
 }

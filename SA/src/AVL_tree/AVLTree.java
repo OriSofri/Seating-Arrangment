@@ -71,9 +71,11 @@ public class AVLTree {
 			//we need to remove node if it has no guests. 
 			if(node.getGuests().isEmpty()) {
 				if(node == root) {
-					root.removeRoot(); 
+					root.removeRoot(this); 
 				}
-				root.removeNode(node); 
+				else {
+					root.removeNode(node);
+				} 
 			}
 		}
 		else if(node.GetNodeInvitedGuest() > searchedValue) {
