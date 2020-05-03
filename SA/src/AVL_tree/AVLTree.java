@@ -34,7 +34,7 @@ public class AVLTree {
 			this.root = new Node(guestToInsert);
 		}
 		else {
-			this.root.insert(guestToInsert); 
+			this.root.insert(guestToInsert, this); 
 		}
 		
 	}
@@ -74,7 +74,7 @@ public class AVLTree {
 					root.removeRoot(this); 
 				}
 				else {
-					root.removeNode(node);
+					root.removeNode(node, this);
 				} 
 			}
 		}

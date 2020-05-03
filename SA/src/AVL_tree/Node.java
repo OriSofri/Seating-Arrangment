@@ -83,8 +83,7 @@ class Node {
     }
     //************Getters ends****************
     
-    //************private methods*************
-    //returns number of guests each Guest in this node LinkedList represents 
+    //************private methods************
    
     
     //returns the guest with lastName if exist and null if don't. 
@@ -117,7 +116,7 @@ class Node {
     //*************************************
     
 
-    private boolean helpInsert(Guest guestToInsert) {
+    private boolean helpInsert(Guest guestToInsert, AVLTree tree) {
     	int currentGuestNumber = this.GetNodeInvitedGuest(); 
 		int numOfGuestsToInsert = guestToInsert.howMany();
 		//need those to know if we got higher on not. 
@@ -148,7 +147,7 @@ class Node {
 			}
 			//walking on the left subtree. 
 			else {
-				checkHeight  = this.left.helpInsert(guestToInsert);
+				checkHeight  = this.left.helpInsert(guestToInsert, tree);
 				if(checkHeight ) {
 						//checking if balance is needed
 						int leftCurrentHeight = this.getLeftHeight(); 
@@ -167,13 +166,13 @@ class Node {
 							}
 							//case 1 perform right rotation
 							else if(leftLeftHeight > leftRightHeight) {
-								rotation(1); 
+								rotation(1, tree); 
 								//fixed the balance no checking is needed
 								return false; 
 							}
 							//case 3: perform left than right 
 							else {
-								rotation(3); 
+								rotation(3, tree); 
 								//fixed the balance no checking is needed
 								return false; 
 							}
@@ -211,7 +210,7 @@ class Node {
 			}
 			//walking on the right subtree. 
 			else {
-				checkHeight  = this.right.helpInsert(guestToInsert);
+				checkHeight  = this.right.helpInsert(guestToInsert, tree);
 				if(checkHeight ) {
 						//checking if balance is needed
 						int leftCurrentHeight = this.getLeftHeight(); 
@@ -230,13 +229,13 @@ class Node {
 							}
 							//case 1 perform left rotation
 							else if(rightRightHeight >= rightLeftHeight) {
-								rotation(2); 
+								rotation(2, tree); 
 								//fixed the balance no checking is needed
 								return false; 
 							}
 							//case 3: perform left than right 
 							else {
-								rotation(4); 
+								rotation(4, tree); 
 								//fixed the balance no checking is needed
 								return false; 
 							}
@@ -253,76 +252,142 @@ class Node {
     }
     //helpInsert ends
     
-    
-    //rotation: perform the wanted rotation- 1.right rotation 2. left rotation 3.left than right 4. right than left. 
-    private void rotation(int rotation) {
-    	Node parent = this.parent; 
+    private void rotateRoot(int rotation, AVLTree tree) {
     	Node temp; 
     	switch(rotation) {
-    	//right rotation
+    	//right rotation 
     	case 1: 
     		temp = this.left.right; 
-    		Node leftChild = this.left; 
-    		//checking if I'm a left or right child
-    		if(parent.left == this) {
-    			//update my parent to point on my left child instead of me
-    			parent.left = leftChild;  
-    		}
-    		else {
-    			//update my parent to point on my left child instead of me
-    			parent.right = leftChild;  
-    		}
-			leftChild.parent = parent;
+    		Node leftChild = this.left;
+  			leftChild.parent = parent;
 			//i become my left child right child. his originally right child is saved in temp.  
     		leftChild.right = this; 
     		//my parent become my left child. 
     		this.parent = leftChild;
     		//my left child become my left child right child. 
     		this.left = temp; 
-    		temp.parent =this; 
+    		if(temp != null) {
+    			temp.parent =this;
+    		}
     		updateHeight(); 
     		this.parent.updateHeight();
+    		tree.setRoot(leftChild);
+    		break;
     		
-    	//left rotation	
-    	case 2:	
+    	case 2:
     		temp = this.right.left;  
-    		Node rightChild = this.right; 
-    		//checking if I'm a left or right child
-    		if(parent.left == this) {
-    			//update my parent to point on my right child instead of me
-    			parent.left = rightChild;  
-    		}
-    		else {
-    			//update my parent to point on my right child instead of me
-    			parent.right = rightChild;  
-    		}
+    		Node rightChild = this.right;
 			rightChild.parent = parent;
 			//i become my right child left child. his originally left child is saved in temp.  
     		rightChild.left = this; 
     		//my parent become my right child. 
     		this.parent = rightChild;
     		//my right child become my right child left child. 
-    		this.right = temp; 
-    		temp.parent =this; 
+    		this.right = temp;
+    		if(temp != null) {
+    			temp.parent =this;
+    		}
     		updateHeight();  
     		this.parent.updateHeight();
+    		tree.setRoot(rightChild);
+    		break;
+    		
     	case 3:
     	case 4:
-    		doubleRotation(rotation); 
-    	 
+    		doubleRotation(rotation, tree); 
+    		break;
     	default: 
     		System.out.println("Wrong rotation case was inserted");
+    		break;
     	}
     }
-    //************************\\
-    private void doubleRotation(int rotation) {
-    	if(rotation == 3) {
-    		this.left.rotation(2);
-    		rotation(1);
+    
+    
+    
+    //rotation: perform the wanted rotation- 1.right rotation 2. left rotation 3.left than right 4. right than left. 
+    private void rotation(int rotation, AVLTree tree) {
+    	Node parent = this.parent; 
+    	Node temp; 
+    	//if we are dealing with the root
+    	if(parent == null) {
+    		rotateRoot(rotation, tree); 
     	}
     	else {
-    		this.right.rotation(1);
-    		rotation(2); 
+    		switch(rotation) {
+        	//right rotation
+        	case 1: 
+        		temp = this.left.right; 
+        		Node leftChild = this.left;
+        		//checking if I'm a left or right child
+        		if(parent.left == this) {
+        			//update my parent to point on my left child instead of me
+        			parent.left = leftChild;  
+        		}
+        		else {
+        			//update my parent to point on my left child instead of me
+        			parent.right = leftChild;  
+        		}
+    			leftChild.parent = parent;
+    			//i become my left child right child. his originally right child is saved in temp.  
+        		leftChild.right = this; 
+        		//my parent become my left child. 
+        		this.parent = leftChild;
+        		//my left child become my left child right child. 
+        		this.left = temp; 
+        		if(temp != null) {
+        			temp.parent =this;
+        		} 
+        		updateHeight(); 
+        		this.parent.updateHeight();
+        		break;
+        		
+        	//left rotation	
+        	case 2:	
+        		temp = this.right.left;  
+        		Node rightChild = this.right; 
+        		//checking if I'm a left or right child
+        		if(parent.left == this) {
+        			//update my parent to point on my right child instead of me
+        			parent.left = rightChild;  
+        		}
+        		else {
+        			//update my parent to point on my right child instead of me
+        			parent.right = rightChild;  
+        		}
+    			rightChild.parent = parent;
+    			//i become my right child left child. his originally left child is saved in temp.  
+        		rightChild.left = this; 
+        		//my parent become my right child. 
+        		this.parent = rightChild;
+        		//my right child become my right child left child. 
+        		this.right = temp; 
+        		if(temp != null) {
+        			temp.parent =this;
+        		} 
+        		updateHeight();  
+        		this.parent.updateHeight();
+        		break;
+        	case 3:
+        	case 4:
+        		doubleRotation(rotation, tree); 
+        		break;
+        	 
+        	default: 
+        		System.out.println("Wrong rotation case was inserted");
+        		break; 
+        	}
+    	}
+    	
+    }
+    //************************\\
+    private void doubleRotation(int rotation, AVLTree tree) {
+    	if(rotation == 3) {
+    		this.left.rotation(2, tree);
+    		rotation(1, tree);
+    	}
+    	else {
+    		this.right.rotation(1, tree);
+    		rotation(2, tree); 
     	}
 		updateHeight(); 
 		this.parent.updateHeight();
@@ -364,8 +429,8 @@ class Node {
     
     // insert a new node and balance the tree if needed.
     //null root already been checked by the Tree 
-	public void insert (Guest guestToInsert) {
-		helpInsert(guestToInsert); 
+	public void insert (Guest guestToInsert, AVLTree tree) {
+		helpInsert(guestToInsert, tree); 
 		
 	}
 	
@@ -469,7 +534,7 @@ class Node {
 	}
 	
 	//remove node from the tree if node exist in the tree. 
-	public boolean removeNode(Node nodeToRemove) {
+	public boolean removeNode(Node nodeToRemove, AVLTree tree) {
 		if(this == nodeToRemove) {
 			if(this.left == null) {
 				if(this.right == null) { 
@@ -490,7 +555,7 @@ class Node {
 				else {
 					//two children - switching this with it successor. 
 					Node successor = this.getsuccessor(this.right);
-					removeNode(successor); 
+					removeNode(successor, tree); 
 					successor.left = this.left; 
 					successor.right = this.right; 
 					successor.updateHeight();
@@ -505,7 +570,7 @@ class Node {
 			if(this.right == null) {
 				return false; 
 			}
-			boolean checkHeight = this.right.removeNode(nodeToRemove); 
+			boolean checkHeight = this.right.removeNode(nodeToRemove, tree); 
 			if(checkHeight) {
 				int leftCurrentHeight = this.getLeftHeight(); 
 				int rightCurrentHeight = this.getRightHeight();
@@ -519,10 +584,10 @@ class Node {
 					int leftRightHeight = leftChild.getRightHeight();
 					if(leftLeftHeight >= leftRightHeight) {
 						//in this case we need to do a right rotation on this and his left child.
-						rotation(1);
+						rotation(1, tree);
 					}
 					else {
-						rotation(3); 
+						rotation(3, tree); 
 					} 
 				}
 				return true; 
@@ -535,7 +600,7 @@ class Node {
 			if(this.left == null) {
 				return false; 
 			}
-			boolean checkHeight = this.left.removeNode(nodeToRemove);
+			boolean checkHeight = this.left.removeNode(nodeToRemove, tree);
 			if(checkHeight) {
 				int leftCurrentHeight = this.getLeftHeight(); 
 				int rightCurrentHeight = this.getRightHeight();
@@ -549,10 +614,10 @@ class Node {
 					int rightRightHeight = rightChild.getRightHeight();
 					if(rightRightHeight >= rightLeftHeight) {
 						//in this case we need to do a left rotation on this and his right child.
-						rotation(2);
+						rotation(2, tree);
 					}
 					else {
-						rotation(4); 
+						rotation(4, tree); 
 					} 
 				}
 				return true; 
@@ -584,7 +649,7 @@ class Node {
 			else {
 				//two children - switching this with it successor. 
 				Node successor = this.getsuccessor(this.right);
-				removeNode(successor); 
+				removeNode(successor, tree); 
 				successor.left = this.left; 
 				successor.right = this.right; 
 				successor.updateHeight();
